@@ -1,25 +1,26 @@
 import cv2
 import os
 import datetime
+from config import parse
 
 vid = cv2.VideoCapture(0)
-TARGET_FPS = 5
+config = parse()
 
 
 def clear_directory():
-	print(f"Cleaning {len(os.listdir('data'))} files")
-	if os.system("rm data/*.png") == 32512:
-		os.system(r"del /S data\*")
+	print(f"Cleaning {len(os.listdir(config.images_folder))} files")
+	if os.system(f"rm {config.images_folder}/*.png") == 32512:
+		os.system(fr"del /S {config.images_folder}\*")
 	print("Done!")
 
 
 def record_video(t: float = 15):
 	cv2.imshow('frame', vid.read()[1])
-	amount = len(os.listdir('data'))
-	while(amount <= t * TARGET_FPS):
+	amount = len(os.listdir(config.images_folder))
+	while(amount <= t * config.target_fps):
 		_, frame = vid.read()
 
-		cv2.imwrite(f'data{os.sep}frame_{amount}.png', frame)
+		cv2.imwrite(f'{config.images_folder}{os.sep}frame_{amount}.png', frame)
 		print(f"Captured frame {amount}")
 		cv2.imshow('frame', frame)
 		amount += 1
@@ -30,8 +31,8 @@ def record_video(t: float = 15):
 
 
 def generate_video(): 
-	image_folder = f'{os.pardir}{os.sep}data'
-	os.chdir("out")
+	image_folder = f'{os.pardir}{os.sep}{config.images_folder}'
+	os.chdir(config.output_folder)
 	video_name = f'{str(datetime.datetime.now())}.avi'
 
 	images = sorted([img for img in os.listdir(image_folder) if img.endswith(".png")], 
@@ -43,20 +44,20 @@ def generate_video():
 
 	height, width, _ = frame.shape   
 
-	video = cv2.VideoWriter(video_name, 0, TARGET_FPS, (width, height))  
+	video = cv2.VideoWriter(video_name, 0, config.target_fps, (width, height))  
 
 	# Appending the images to the video one by one 
 	for image in images:  
 		video.write(cv2.imread(os.path.join(image_folder, image)))
 
-	video.release()  # releasing the video generated  frame_
+	video.release()  # releasing the video generated
 	os.chdir(f"{os.pardir}")
 
 
 try:
 	while True:
 		clear_directory()
-		record_video()
+		record_video(config.time)
 		generate_video()
 except KeyboardInterrupt:
 	vid.release()
